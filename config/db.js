@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://pankajkr12022001:pankaj123@cluster0.sgcpl7z.mongodb.net/"
+require('dotenv').config();
+const uri = process.env.URI
 
 
 async function connectDB() {
+ 
     try {
       await mongoose.connect(uri, {
         useNewUrlParser: true,

@@ -1,10 +1,17 @@
 const express = require('express');
 
 const app = express();
-const Port = 5000;
+
+
+// console.log(x)
 const {connectDB} = require('./config/db');
 const {User} = require('./model/user');
 connectDB();
+require('dotenv').config();
+
+const port = process.env.PORT||3000;
+
+
 app.use(express.json());
 
 const jwt = require('jsonwebtoken');
@@ -34,7 +41,7 @@ const options = {
 // // api to generate the otp and send back to the user
 app.post('/generate-otp', async (req, res) => {
   const { email } = req.body;
-
+  
   const otp = generateOTP();
   const user = await User.findOne({ email });
    if(user)
@@ -82,19 +89,25 @@ app.post('/login', async (req, res) => {
       return res.status(403).json({ message: 'User account blocked.' });
     }
     // otp will be invalid after the 5 minute
-
+     var current_time = moment().format("YYYY-MM-DD HH:mm:ss");
+     current_time = new Date(current_time);
+     const otp_time = new Date(user.otptime);
+     const time_diff = ((current_time-otp_time)/(60*1000)); // we get the time difference in minute
+     if(time_diff>=5)
+     {
+        return res.json({message: "otp will be valid only for 5 minute"})
+     }
     
     // Check if the OTP is correct
     if (otp !== user.otp) {
       user.wrongAttempts++;
-    }
-      
-     
       if (user.wrongAttempts >= 5) {
         user.blocked = true;
         await user.save();
         return res.status(403).json({ message: 'User account blocked. ' });
       }
+      return res.json({message : "please enter a valid otp"})
+    }
       
     
     // Clear the OTP to prevent reuse
@@ -112,6 +125,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.listen(Port , ()=>{
-  console.log(`server is listening on the Port ${Port}`);
+app.listen(port , ()=>{
+  console.log(`server is listening on the Port ${port}`);
 })
